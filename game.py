@@ -88,12 +88,12 @@ def game():
   #==================================================================
   # Alternative terrain and obstacles
   ltMix4 = pygame.transform.scale(tileset.subsurface(((120,0),(96,24))),(SCALE[0]*4,SCALE[1]))
-  ltMix4Rect = ltMix4.get_rect(left=w*5,y=GROUND_HEIGHT-(h*2),width=w*4,height=h*.75)
+  ltMix4Rect = ltMix4.get_rect(left=w*7,y=GROUND_HEIGHT-(h*2),width=w*4,height=h*.75)
 
   orgMix4 = pygame.transform.scale(tileset.subsurface(((0,0),(96,24))),(SCALE[0]*4,SCALE[1]))
-  orgMix4Rect = orgMix4.get_rect(left=w*8,y=GROUND_HEIGHT-(h*4),width=w*4,height=h*.75)
+  orgMix4Rect = orgMix4.get_rect(left=w*10,y=GROUND_HEIGHT-(h*4),width=w*4,height=h*.75)
 
-  ltSolid = ((tiles[12]), tiles[12].get_rect(x=0,y=GROUND_HEIGHT-(h*2),width=w,height=h))
+  ltSolid = [((tiles[12]), tiles[12].get_rect(x=w*randint(1,10),y=GROUND_HEIGHT-(h*randint(2,5)),width=w,height=h)) for _ in range(randint(2,5))]
   orgSolid = ((tiles[10]), tiles[10].get_rect(x=0,y=GROUND_HEIGHT-(h*2),width=w,height=h))
   
   
@@ -105,7 +105,9 @@ def game():
   #==================================================================
   collisionRects = groundRects.copy()
   collisionRects.append(ltMix4Rect)
-  collisionRects.append(orgMix4Rect)
+  # collisionRects.append(orgMix4Rect)
+  for i in ltSolid:
+    collisionRects.append(i[1])
 
   #==================================================================
   
@@ -121,8 +123,8 @@ def game():
 
   def drawFg():
     window.blit(ltMix4, ltMix4Rect)
-    window.blit(orgMix4, orgMix4Rect)
-    
+    # window.blit(orgMix4, orgMix4Rect)
+    window.blits(ltSolid)
   
   def groundCollision():
     tmpRect = heroRect.copy()
@@ -155,7 +157,6 @@ def game():
     drawBg()
     drawHero()
     drawFg()
-    # groundCollision()
     pygame.display.update()
   
 
@@ -170,6 +171,20 @@ def game():
     
     clock.tick(FPS)
     keys = pygame.key.get_pressed()
+
+    ltMix4Rect.x -= 2
+    # orgMix4Rect.x -= 2
+    if ltMix4Rect.x+ltMix4Rect.width <= 0:
+      ltMix4Rect.x = WINDOW_WIDTH
+      ltMix4Rect.y = GROUND_HEIGHT-(h*randint(2,4))
+    # if orgMix4Rect.x+orgMix4Rect.width <= 0:
+    #   orgMix4Rect.x = WINDOW_WIDTH
+    #   orgMix4Rect.y = GROUND_HEIGHT-(h*randint(2,6))
+    for i in range(len(ltSolid)):
+      ltSolid[i][1].x -= 2
+      if ltSolid[i][1].x+ltSolid[i][1].width <= 0:
+        ltSolid[i][1].x = WINDOW_WIDTH
+        ltSolid[i][1].y = GROUND_HEIGHT-(h*randint(2,4))
 
     if keys[pygame.K_LEFT] and heroRect.x > 0:
       direction = 'Left'
@@ -209,7 +224,7 @@ def game():
         isFalling = False
         jumpCount = 10
     elif i == None and not isJumping:
-      jumpCount = 5
+      jumpCount = 8
       isGrounded = False
       isFalling = True
     
