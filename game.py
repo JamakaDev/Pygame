@@ -209,7 +209,7 @@ def game():
         isFalling = False
         jumpCount = 10
     elif i == None and not isJumping:
-      jumpCount = 6
+      jumpCount = 5
       isGrounded = False
       isFalling = True
     
