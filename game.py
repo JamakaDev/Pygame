@@ -1,5 +1,4 @@
 ##################################################################
-from operator import truediv
 import pygame
 from random import *
 import time
@@ -88,13 +87,13 @@ def game():
   #==================================================================
   # Alternative terrain and obstacles
   ltMix4 = pygame.transform.scale(tileset.subsurface(((120,0),(96,24))),(SCALE[0]*4,SCALE[1]))
-  ltMix4Rect = ltMix4.get_rect(left=w*7,y=GROUND_HEIGHT-(h*2),width=w*4,height=h*.75)
+  ltMix4Rect = ltMix4.get_rect(left=w*randint(6,10),y=GROUND_HEIGHT-(h*randint(2,4)),width=w*4,height=h*.75)
 
   orgMix4 = pygame.transform.scale(tileset.subsurface(((0,0),(96,24))),(SCALE[0]*4,SCALE[1]))
-  orgMix4Rect = orgMix4.get_rect(left=w*10,y=GROUND_HEIGHT-(h*4),width=w*4,height=h*.75)
+  orgMix4Rect = orgMix4.get_rect(left=w*randint(6,10),y=GROUND_HEIGHT-(h*randint(2,4)),width=w*4,height=h*.75)
 
-  ltSolid = [((tiles[12]), tiles[12].get_rect(x=w*randint(1,10),y=GROUND_HEIGHT-(h*randint(2,5)),width=w,height=h)) for _ in range(randint(2,5))]
-  orgSolid = ((tiles[10]), tiles[10].get_rect(x=0,y=GROUND_HEIGHT-(h*2),width=w,height=h))
+  ltSolid = [((tiles[12]), tiles[12].get_rect(x=w*randint(5,10),y=GROUND_HEIGHT-(h*randint(2,5)),width=w,height=16)) for _ in range(randint(2,5))]
+  orgSolid = ((tiles[10]), tiles[10].get_rect(x=w*randint(6,10),y=GROUND_HEIGHT-(h*randint(2,4)),width=w,height=h))
   
   
   #==================================================================
@@ -104,10 +103,9 @@ def game():
 
   #==================================================================
   collisionRects = groundRects.copy()
-  collisionRects.append(ltMix4Rect)
+  # collisionRects.append(ltMix4Rect)
   # collisionRects.append(orgMix4Rect)
-  for i in ltSolid:
-    collisionRects.append(i[1])
+  platformRects = [i[1] for i in ltSolid]
 
   #==================================================================
   
@@ -122,21 +120,26 @@ def game():
     window.blits(groundList)
 
   def drawFg():
-    window.blit(ltMix4, ltMix4Rect)
+    # window.blit(ltMix4, ltMix4Rect)
     # window.blit(orgMix4, orgMix4Rect)
     window.blits(ltSolid)
   
+  def platformCollision():
+    tmpRect = heroRect.copy()
+    tmpRect.bottom += 1
+    collideIndex = tmpRect.collidelist(platformRects)
+    if collideIndex != -1:
+      return (True, collideIndex)
+    return (False, collideIndex)
+
+
   def groundCollision():
     tmpRect = heroRect.copy()
     tmpRect.bottom += 1
     collideIndex = tmpRect.collidelist(collisionRects)
     if collideIndex != -1:
-      heroRect.bottom = collisionRects[collideIndex].top
-      isJumping = False
-      isGrounded = True
-      isFalling = False
+      print(collideIndex)
       return collideIndex
-
     return None
     
 
@@ -171,27 +174,28 @@ def game():
     
     clock.tick(FPS)
     keys = pygame.key.get_pressed()
+    
+    index = platformCollision()
+    if index[0]:
+      heroRect.x -= 2
+      heroRect.bottom = platformRects[index[1]].top
+      isJumping = False
+      isGrounded = True
+      isFalling = False
+    
 
-    ltMix4Rect.x -= 2
-    # orgMix4Rect.x -= 2
-    if ltMix4Rect.x+ltMix4Rect.width <= 0:
-      ltMix4Rect.x = WINDOW_WIDTH
-      ltMix4Rect.y = GROUND_HEIGHT-(h*randint(2,4))
-    # if orgMix4Rect.x+orgMix4Rect.width <= 0:
-    #   orgMix4Rect.x = WINDOW_WIDTH
-    #   orgMix4Rect.y = GROUND_HEIGHT-(h*randint(2,6))
     for i in range(len(ltSolid)):
       ltSolid[i][1].x -= 2
       if ltSolid[i][1].x+ltSolid[i][1].width <= 0:
         ltSolid[i][1].x = WINDOW_WIDTH
         ltSolid[i][1].y = GROUND_HEIGHT-(h*randint(2,4))
 
-    if keys[pygame.K_LEFT] and heroRect.x > 0:
+    if keys[pygame.K_LEFT] and heroRect.x-HERO_VEL > 0:
       direction = 'Left'
       heroSurface = hero[f'heroRun{direction}'][heroIndex]
       heroRect.x -= HERO_VEL
       heroIndex += 1
-    elif keys[pygame.K_RIGHT] and heroRect.x < WINDOW_WIDTH-w:
+    elif keys[pygame.K_RIGHT] and heroRect.x+HERO_VEL < WINDOW_WIDTH-w:
       direction = 'Right'
       heroSurface = hero[f'heroRun{direction}'][heroIndex]
       heroRect.x += HERO_VEL
@@ -220,16 +224,18 @@ def game():
     if i and not isJumping:
       if heroRect.bottom+HERO_VEL >= collisionRects[i].top:
         heroRect.bottom = collisionRects[i].top
-        isGrounded = True
-        isFalling = False
-        jumpCount = 10
+      elif heroRect.bottom+HERO_VEL >= platformRects[index[1]]:
+        heroRect.bottom = platformRects[index[1]].top
+      isGrounded = True
+      isFalling = False
+      jumpCount = 10
     elif i == None and not isJumping:
       jumpCount = 8
       isGrounded = False
       isFalling = True
     
 
-      
+
     if heroIndex+1 >= 10: heroIndex = 0
     drawGame()
 
